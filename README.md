@@ -1,12 +1,19 @@
 # deck_media_watcher
 
-Service for Steam Deck that monitors screenshot and video folders. When new screenshots appear they are sent to a Telegram chat, and new videos are uploaded to YouTube through AmneziaWG VPN.
+Service for Steam Deck that monitors the screenshot folder and sends new screenshots to a Telegram chat.
 
 ## Configuration
 
 1. Copy `.env.example` to `.env` and fill in the values.
-2. Place your YouTube OAuth token file on the host and set its path in `.env`.
-3. Adjust host paths to screenshot and video directories.
+2. Adjust host path to the screenshot directory.
+
+Required variables in `.env`:
+- `HOST_SCREENSHOT_DIR` — path on host to Steam Deck screenshots
+- `SCREENSHOT_DIR` — mount point inside the container (default `/screenshots`)
+- `TELEGRAM_BOT_TOKEN` — your bot token
+- `TELEGRAM_CHAT_ID` — chat ID to send screenshots
+Optional:
+- `STEAM_LANG` — language for game name lookup via Steam store API (default `en`)
 
 ## Running with Docker
 

@@ -1,11 +1,8 @@
-version: "3.8"
 services:
   watcher:
     build: .
     env_file: .env
     volumes:
       - ${HOST_SCREENSHOT_DIR}:${SCREENSHOT_DIR}:ro
-      - ${HOST_VIDEO_DIR}:${VIDEO_DIR}:ro
-      - ${HOST_YOUTUBE_TOKEN}:${YOUTUBE_TOKEN_FILE}:ro
     restart: unless-stopped
     network_mode: host
