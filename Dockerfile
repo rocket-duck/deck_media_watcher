@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV POETRY_VIRTUALENVS_CREATE=false
+RUN pip install --no-cache-dir poetry
+
+COPY pyproject.toml poetry.lock* ./
+RUN poetry install --no-root --only main
+
+COPY deck_media_watcher ./deck_media_watcher
+COPY main.py README.md ./
+
+CMD ["poetry", "run", "python", "main.py"]
