@@ -17,7 +17,8 @@ def main() -> None:
     screenshot_handler = ScreenshotHandler()
 
     observer = Observer()
-    observer.schedule(screenshot_handler, screenshot_dir, recursive=False)
+    # Watch recursively to capture screenshots in all per-game subfolders
+    observer.schedule(screenshot_handler, screenshot_dir, recursive=True)
     observer.start()
 
     try:

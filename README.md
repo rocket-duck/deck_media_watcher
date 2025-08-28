@@ -1,6 +1,6 @@
 # deck_media_watcher
 
-Service for Steam Deck that monitors the screenshot folder and sends new screenshots to a Telegram chat.
+Service for Steam Deck that monitors the screenshot folder (recursively) and sends new screenshots to a Telegram chat.
 
 ## Configuration
 
@@ -8,7 +8,7 @@ Service for Steam Deck that monitors the screenshot folder and sends new screens
 2. Adjust host path to the screenshot directory.
 
 Required variables in `.env`:
-- `HOST_SCREENSHOT_DIR` — path on host to Steam Deck screenshots
+- `HOST_SCREENSHOT_DIR` — path on host to Steam Deck screenshots (you can point to `.../userdata/<id>/760/remote` to cover all games)
 - `SCREENSHOT_DIR` — mount point inside the container (default `/screenshots`)
 - `TELEGRAM_BOT_TOKEN` — your bot token
 - `TELEGRAM_CHAT_ID` — chat ID to send screenshots
