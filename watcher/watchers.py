@@ -1,5 +1,7 @@
 import os
 import re
+import time
+import logging
 from typing import Optional
 
 import requests
@@ -19,14 +21,24 @@ class ScreenshotHandler(FileSystemEventHandler):
             return
         if not self.bot_token or not self.chat_id:
             return
-        caption = self._build_caption(event.src_path)
-        with open(event.src_path, "rb") as image:
-            requests.post(
-                f"https://api.telegram.org/bot{self.bot_token}/sendPhoto",
-                data={"chat_id": self.chat_id, "caption": caption} if caption else {"chat_id": self.chat_id},
-                files={"photo": image},
-                timeout=60,
-            )
+        path = event.src_path
+        # Small delay to ensure file is fully written
+        time.sleep(float(os.getenv("FILE_READY_DELAY", "0.5")))
+        caption = self._build_caption(path)
+        try:
+            with open(path, "rb") as image:
+                resp = requests.post(
+                    f"https://api.telegram.org/bot{self.bot_token}/sendPhoto",
+                    data={"chat_id": self.chat_id, "caption": caption} if caption else {"chat_id": self.chat_id},
+                    files={"photo": image},
+                    timeout=60,
+                )
+            if resp.status_code != 200:
+                logging.error("Telegram sendPhoto failed (%s): %s", resp.status_code, resp.text)
+            else:
+                logging.info("Sent screenshot: %s%s", os.path.basename(path), f" ({caption})" if caption else "")
+        except Exception as e:
+            logging.exception("Failed to send screenshot %s: %s", path, e)
 
     # --- helpers ---------------------------------------------------------
     def _build_caption(self, path: str) -> Optional[str]:

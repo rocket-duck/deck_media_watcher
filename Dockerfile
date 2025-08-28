@@ -12,4 +12,4 @@ RUN poetry install --no-root --only main
 COPY watcher ./watcher
 COPY main.py README.md ./
 
-CMD ["poetry", "run", "python", "main.py"]
+CMD ["poetry", "run", "python", "-u", "main.py"]
