@@ -63,16 +63,16 @@ class ScreenshotHandler(FileSystemEventHandler):
             lang = os.getenv("STEAM_LANG", "en")
             url = "https://store.steampowered.com/api/appdetails"
             params = {"appids": str(appid), "l": lang}
-            print(f"[DEBUG] Requesting game name from Steam API: URL={url}, params={params}", flush=True)
-            print("[DEBUG] Sending request to Steam API...", flush=True)
+            print(f"[DEBUG] Requesting game name from Steam API: URL={url}, params={params}", file=sys.stderr, flush=True)
+            print("[DEBUG] Sending request to Steam API...", file=sys.stderr, flush=True)
             resp = requests.get(
                 url,
                 params=params,
                 timeout=10,
             )
-            print(f"[DEBUG] Steam API response status: {resp.status_code}", flush=True)
-            print(f"[DEBUG] Steam API response body: {resp.text}", flush=True)
-            print("[DEBUG] Finished processing Steam API response.", flush=True)
+            print(f"[DEBUG] Steam API response status: {resp.status_code}", file=sys.stderr, flush=True)
+            print(f"[DEBUG] Steam API response body: {resp.text}", file=sys.stderr, flush=True)
+            print("[DEBUG] Finished processing Steam API response.", file=sys.stderr, flush=True)
             if resp.status_code != 200:
                 return None
             data = resp.json()
@@ -82,5 +82,5 @@ class ScreenshotHandler(FileSystemEventHandler):
             name = entry.get("data", {}).get("name")
             return name
         except Exception as e:
-            print(f"[DEBUG] Error resolving game name for appid {appid}: {e}", flush=True)
+            print(f"[DEBUG] Error resolving game name for appid {appid}: {e}", file=sys.stderr, flush=True)
             return None
