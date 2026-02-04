@@ -3,6 +3,8 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - ${HOST_SCREENSHOT_DIR}:${SCREENSHOT_DIR}:ro
     restart: unless-stopped
