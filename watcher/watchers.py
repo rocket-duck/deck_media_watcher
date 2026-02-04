@@ -2,6 +2,7 @@ import os
 import re
 import time
 import logging
+import sys
 from typing import Optional
 
 import requests
@@ -63,13 +64,16 @@ class ScreenshotHandler(FileSystemEventHandler):
             url = "https://store.steampowered.com/api/appdetails"
             params = {"appids": str(appid), "l": lang}
             logging.info("Requesting game name from Steam API: URL=%s, params=%s", url, params)
+            sys.stdout.flush()
             resp = requests.get(
                 url,
                 params=params,
                 timeout=10,
             )
             logging.info("Steam API response status: %s", resp.status_code)
+            sys.stdout.flush()
             logging.info("Steam API response body: %s", resp.text)
+            sys.stdout.flush()
             if resp.status_code != 200:
                 return None
             data = resp.json()
@@ -80,4 +84,5 @@ class ScreenshotHandler(FileSystemEventHandler):
             return name
         except Exception as e:
             logging.exception("Error resolving game name for appid %s: %s", appid, e)
+            sys.stdout.flush()
             return None
