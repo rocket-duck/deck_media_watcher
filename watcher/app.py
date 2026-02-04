@@ -19,7 +19,6 @@ def main() -> None:
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     handler.setFormatter(formatter)
-    handler.flush = sys.stdout.flush
     logger.handlers = [handler]
 
     screenshot_dir = os.getenv("SCREENSHOT_DIR")

@@ -26,7 +26,7 @@ class ScreenshotHandler(FileSystemEventHandler):
             return
         path = event.src_path
         # Small delay to ensure file is fully written
-        time.sleep(float(os.getenv("FILE_READY_DELAY", "0.5")))
+        time.sleep(float(os.getenv("FILE_READY_DELAY", "1")))
         caption = self._build_caption(path)
         try:
             with open(path, "rb") as image:
@@ -52,27 +52,48 @@ class ScreenshotHandler(FileSystemEventHandler):
         return f"{name}" if name else f"App {appid}"
 
     def _extract_appid_from_path(self, path: str) -> Optional[str]:
-        # Common Steam path: .../userdata/<user>/760/remote/<appid>/screenshots/XXXX.jpg
-        m = re.search(r"/remote/(\d{1,10})/screenshots/", path)
-        if m:
-            return m.group(1)
+        """
+        Steam appid extraction that works both in container and host.
+
+        Ignores:
+        - folders like 'thumbnails'
+        - folders with numbers < 100 (junk)
+        """
+        parts = path.split(os.sep)
+
+        def is_valid_appid(value: str) -> bool:
+            return value.isdigit() and int(value) >= 100
+
+        # контейнер: /screenshots/<appid>/screenshots/file.jpg
+        try:
+            if parts[1] == "screenshots" and is_valid_appid(parts[2]) and "thumbnails" not in parts:
+                return parts[2]
+        except IndexError:
+            pass
+
+        try:
+            idx = parts.index("remote")
+            if is_valid_appid(parts[idx + 1]) and "thumbnails" not in parts:
+                return parts[idx + 1]
+        except (ValueError, IndexError):
+            pass
+
         return None
 
+    _appid_cache = {}
+
     def _resolve_game_name(self, appid: str) -> Optional[str]:
+        if appid in self._appid_cache:
+            return self._appid_cache[appid]
         try:
             lang = os.getenv("STEAM_LANG", "en")
             url = "https://store.steampowered.com/api/appdetails"
             params = {"appids": str(appid), "l": lang}
-            print(f"[DEBUG] Requesting game name from Steam API: URL={url}, params={params}", file=sys.stderr, flush=True)
-            print("[DEBUG] Sending request to Steam API...", file=sys.stderr, flush=True)
             resp = requests.get(
                 url,
                 params=params,
                 timeout=10,
             )
-            print(f"[DEBUG] Steam API response status: {resp.status_code}", file=sys.stderr, flush=True)
-            print(f"[DEBUG] Steam API response body: {resp.text}", file=sys.stderr, flush=True)
-            print("[DEBUG] Finished processing Steam API response.", file=sys.stderr, flush=True)
             if resp.status_code != 200:
                 return None
             data = resp.json()
@@ -80,7 +101,8 @@ class ScreenshotHandler(FileSystemEventHandler):
             if not entry or not entry.get("success"):
                 return None
             name = entry.get("data", {}).get("name")
+            if name:
+                self._appid_cache[appid] = name
             return name
-        except Exception as e:
-            print(f"[DEBUG] Error resolving game name for appid {appid}: {e}", file=sys.stderr, flush=True)
+        except Exception:
             return None
