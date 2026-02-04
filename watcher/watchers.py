@@ -64,6 +64,8 @@ class ScreenshotHandler(FileSystemEventHandler):
             url = "https://store.steampowered.com/api/appdetails"
             params = {"appids": str(appid), "l": lang}
             logging.info("Requesting game name from Steam API: URL=%s, params=%s", url, params)
+            for handler in logging.getLogger().handlers:
+                handler.flush()
             sys.stdout.flush()
             resp = requests.get(
                 url,
@@ -71,8 +73,12 @@ class ScreenshotHandler(FileSystemEventHandler):
                 timeout=10,
             )
             logging.info("Steam API response status: %s", resp.status_code)
+            for handler in logging.getLogger().handlers:
+                handler.flush()
             sys.stdout.flush()
             logging.info("Steam API response body: %s", resp.text)
+            for handler in logging.getLogger().handlers:
+                handler.flush()
             sys.stdout.flush()
             if resp.status_code != 200:
                 return None
@@ -84,5 +90,7 @@ class ScreenshotHandler(FileSystemEventHandler):
             return name
         except Exception as e:
             logging.exception("Error resolving game name for appid %s: %s", appid, e)
+            for handler in logging.getLogger().handlers:
+                handler.flush()
             sys.stdout.flush()
             return None
