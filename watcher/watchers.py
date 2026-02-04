@@ -60,11 +60,16 @@ class ScreenshotHandler(FileSystemEventHandler):
     def _resolve_game_name(self, appid: str) -> Optional[str]:
         try:
             lang = os.getenv("STEAM_LANG", "en")
+            url = "https://store.steampowered.com/api/appdetails"
+            params = {"appids": str(appid), "l": lang}
+            logging.info("Requesting game name from Steam API: URL=%s, params=%s", url, params)
             resp = requests.get(
-                "https://store.steampowered.com/api/appdetails",
-                params={"appids": str(appid), "l": lang},
+                url,
+                params=params,
                 timeout=10,
             )
+            logging.info("Steam API response status: %s", resp.status_code)
+            logging.info("Steam API response body: %s", resp.text)
             if resp.status_code != 200:
                 return None
             data = resp.json()
