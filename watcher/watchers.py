@@ -17,6 +17,8 @@ class ScreenshotHandler(FileSystemEventHandler):
     def on_created(self, event):  # type: ignore[override]
         if event.is_directory:
             return
+        if "thumbnails" in event.src_path.lower().split(os.sep):
+            return
         if not event.src_path.lower().endswith((".png", ".jpg", ".jpeg")):
             return
         if not self.bot_token or not self.chat_id:

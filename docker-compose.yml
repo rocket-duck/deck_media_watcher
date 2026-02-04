@@ -1,7 +1,8 @@
 services:
   watcher:
     build: .
-    env_file: .env
+    env_file:
+      - .env
     volumes:
       - ${HOST_SCREENSHOT_DIR}:${SCREENSHOT_DIR}:ro
     restart: unless-stopped
