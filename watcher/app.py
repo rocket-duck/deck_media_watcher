@@ -1,10 +1,10 @@
-import os
 import sys
 import time
 import logging
 from dotenv import load_dotenv
 from watchdog.observers import Observer
-from watcher.watchers import ScreenshotHandler
+from watcher.config import load_app_config
+from watcher.handler import ScreenshotHandler
 
 
 def main() -> None:
@@ -21,18 +21,18 @@ def main() -> None:
     handler.setFormatter(formatter)
     logger.handlers = [handler]
 
-    screenshot_dir = os.getenv("SCREENSHOT_DIR")
+    try:
+        config = load_app_config()
+    except RuntimeError as exc:
+        logger.error("%s; exiting", exc)
+        raise
 
-    if not screenshot_dir:
-        logger.error("SCREENSHOT_DIR is not set; exiting")
-        raise RuntimeError("SCREENSHOT_DIR must be set in the environment")
-
-    screenshot_handler = ScreenshotHandler()
+    screenshot_handler = ScreenshotHandler(config)
 
     observer = Observer()
     # Watch recursively to capture screenshots in all per-game subfolders
-    observer.schedule(screenshot_handler, screenshot_dir, recursive=True)
-    logger.info("Watching %s (recursive)", screenshot_dir)
+    observer.schedule(screenshot_handler, config.screenshot_dir, recursive=True)
+    logger.info("Watching %s (recursive)", config.screenshot_dir)
     observer.start()
 
     try:
@@ -40,4 +40,6 @@ def main() -> None:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
+    finally:
+        screenshot_handler.close()
     observer.join()

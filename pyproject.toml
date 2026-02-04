@@ -17,6 +17,9 @@ requests = "^2.31.0"
 # Expose CLI entrypoint from the package
 deck-media-watcher = "watcher.app:main"
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.15.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
