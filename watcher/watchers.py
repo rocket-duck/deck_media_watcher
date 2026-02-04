@@ -62,16 +62,17 @@ class ScreenshotHandler(FileSystemEventHandler):
             lang = os.getenv("STEAM_LANG", "en")
             resp = requests.get(
                 "https://store.steampowered.com/api/appdetails",
-                params={"appids": appid, "l": lang},
+                params={"appids": str(appid), "l": lang},
                 timeout=10,
             )
             if resp.status_code != 200:
                 return None
             data = resp.json()
-            entry = data.get(appid)
+            entry = data.get(str(appid))
             if not entry or not entry.get("success"):
                 return None
             name = entry.get("data", {}).get("name")
             return name
-        except Exception:
+        except Exception as e:
+            logging.exception("Error resolving game name for appid %s: %s", appid, e)
             return None
