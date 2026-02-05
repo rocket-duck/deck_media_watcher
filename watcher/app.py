@@ -1,7 +1,6 @@
 import sys
 import time
 import logging
-from dotenv import load_dotenv
 from watchdog.observers import Observer
 from watcher.config import load_app_config
 from watcher.handler import ScreenshotHandler
@@ -9,9 +8,6 @@ from watcher.handler import ScreenshotHandler
 
 def main() -> None:
     """Entry point for the media watcher service."""
-    # Load env from file if present (compose also injects env)
-    load_dotenv()
-
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 

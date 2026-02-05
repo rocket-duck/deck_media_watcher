@@ -1,9 +1,20 @@
 services:
   watcher:
-    build: .
-    env_file:
-      - .env
+    image: ghcr.io/OWNER/deck-media-watcher:latest
     volumes:
-      - ${HOST_SCREENSHOT_DIR}:${SCREENSHOT_DIR}:ro
+      - /path/to/Steam/userdata/<user>/760/remote:/screenshots:ro
+    environment:
+      SCREENSHOT_DIR: /screenshots
+      TELEGRAM_BOT_TOKEN: your_bot_token
+      TELEGRAM_CHAT_ID: your_chat_id
+      STEAM_LANG: en
+      FILE_READY_DELAY: "1"
+      FILE_READY_ATTEMPTS: "5"
+      FILE_READY_MIN_SIZE: "1024"
+      DEDUP_TTL_SECONDS: "120"
+      TELEGRAM_SEND_ATTEMPTS: "3"
+      TELEGRAM_SEND_BACKOFF_SECONDS: "1"
+      TELEGRAM_CAPTION_LIMIT: "1024"
+      SHUTDOWN_DRAIN_SECONDS: "5"
     restart: unless-stopped
     network_mode: host

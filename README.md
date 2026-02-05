@@ -4,11 +4,9 @@ Service for Steam Deck that monitors the screenshot folder (recursively) and sen
 
 ## Configuration
 
-1. Copy `.env.example` to `.env` and fill in the values.
-2. Adjust host path to the screenshot directory.
+Fill in the environment variables directly in `docker-compose.yml` and set the host path to the screenshot directory.
 
-Required variables in `.env`:
-- `HOST_SCREENSHOT_DIR` — path on host to Steam Deck screenshots (you can point to `.../userdata/<id>/760/remote` to cover all games)
+Required variables:
 - `SCREENSHOT_DIR` — mount point inside the container (default `/screenshots`)
 - `TELEGRAM_BOT_TOKEN` — your bot token
 - `TELEGRAM_CHAT_ID` — chat ID to send screenshots
@@ -26,9 +24,30 @@ Optional:
 ## Running with Docker
 
 ```bash
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 ```
 The service runs in the background and restarts automatically.
+
+## Publishing Image (GHCR)
+
+1. Log in:
+```bash
+echo $GITHUB_TOKEN | docker login ghcr.io -u your_github_user --password-stdin
+```
+2. Build and tag:
+```bash
+docker build -t ghcr.io/your_github_user/deck-media-watcher:0.1.0 .
+```
+3. Push:
+```bash
+docker push ghcr.io/your_github_user/deck-media-watcher:0.1.0
+```
+4. Update `docker-compose.yml` image tag and redeploy:
+```bash
+docker compose pull
+docker compose up -d
+```
 
 ## Project Structure
 
