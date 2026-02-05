@@ -29,25 +29,6 @@ docker compose up -d
 ```
 The service runs in the background and restarts automatically.
 
-## Publishing Image (GHCR)
-
-1. Log in:
-```bash
-echo $GITHUB_TOKEN | docker login ghcr.io -u your_github_user --password-stdin
-```
-2. Build and tag:
-```bash
-docker build -t ghcr.io/your_github_user/deck-media-watcher:0.1.0 .
-```
-3. Push:
-```bash
-docker push ghcr.io/your_github_user/deck-media-watcher:0.1.0
-```
-4. Update `docker-compose.yml` image tag and redeploy:
-```bash
-docker compose pull
-docker compose up -d
-```
 
 ## Project Structure
 
