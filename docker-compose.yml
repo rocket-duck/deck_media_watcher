@@ -1,8 +1,8 @@
 services:
   watcher:
-    image: ghcr.io/OWNER/deck-media-watcher:latest
+    image: ghcr.io/rocket-duck/deck_media_watcher:latest
     volumes:
-      - /path/to/Steam/userdata/<user>/760/remote:/screenshots:ro
+      - /home/<linux_user>/.local/share/Steam/userdata/<steam_id>/760/remote:/screenshots:ro
     environment:
       SCREENSHOT_DIR: /screenshots
       TELEGRAM_BOT_TOKEN: your_bot_token
