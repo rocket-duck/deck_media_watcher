@@ -12,6 +12,7 @@ Required variables:
 - `TELEGRAM_CHAT_ID` — chat ID to send screenshots
 Optional:
 - `STEAM_LANG` — language for game name lookup via Steam store API (default `en`)
+- `STEAM_CC` — country code for Steam store lookup (default `us`)
 - `STATE_FILE` — path to persistent send state file (default `/state/send_state.json`)
 - `STATE_SENT_RETENTION_SECONDS` — how long to keep `sent` records in state (default `259200`, 3 days)
 - `FILE_READY_DELAY` — seconds between file readiness checks (default `1`)

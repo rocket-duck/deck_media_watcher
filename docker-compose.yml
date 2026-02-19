@@ -11,6 +11,7 @@ services:
       TELEGRAM_BOT_TOKEN: your_bot_token
       TELEGRAM_CHAT_ID: your_chat_id
       STEAM_LANG: en
+      STEAM_CC: us
       FILE_READY_DELAY: "1"
       FILE_READY_ATTEMPTS: "5"
       FILE_READY_MIN_SIZE: "1024"

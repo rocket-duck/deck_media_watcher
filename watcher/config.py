@@ -47,6 +47,7 @@ class StateConfig:
 @dataclass(frozen=True)
 class SteamConfig:
     lang: str
+    cc: str
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ def load_app_config() -> AppConfig:
     )
     steam = SteamConfig(
         lang=os.getenv("STEAM_LANG", "en"),
+        cc=os.getenv("STEAM_CC", "us"),
     )
 
     return AppConfig(
