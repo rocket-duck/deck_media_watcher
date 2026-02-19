@@ -36,3 +36,6 @@ class SteamResolver:
             return name
         except Exception:
             return None
+
+    def close(self) -> None:
+        self._session.close()

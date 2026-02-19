@@ -11,6 +11,8 @@ class TelegramConfig:
     send_attempts: int
     backoff_seconds: float
     caption_limit: int
+    connect_timeout_seconds: float
+    read_timeout_seconds: float
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,18 @@ class ShutdownConfig:
 
 
 @dataclass(frozen=True)
+class RetryConfig:
+    interval_seconds: float
+    max_interval_seconds: float
+
+
+@dataclass(frozen=True)
+class StateConfig:
+    file_path: str
+    sent_retention_seconds: float
+
+
+@dataclass(frozen=True)
 class SteamConfig:
     lang: str
 
@@ -42,6 +56,8 @@ class AppConfig:
     file_ready: FileReadyConfig
     dedup: DedupConfig
     shutdown: ShutdownConfig
+    retry: RetryConfig
+    state: StateConfig
     steam: SteamConfig
 
 
@@ -61,6 +77,8 @@ def load_app_config() -> AppConfig:
         send_attempts=int(os.getenv("TELEGRAM_SEND_ATTEMPTS", "3")),
         backoff_seconds=float(os.getenv("TELEGRAM_SEND_BACKOFF_SECONDS", "1")),
         caption_limit=int(os.getenv("TELEGRAM_CAPTION_LIMIT", "1024")),
+        connect_timeout_seconds=float(os.getenv("TELEGRAM_CONNECT_TIMEOUT_SECONDS", "10")),
+        read_timeout_seconds=float(os.getenv("TELEGRAM_READ_TIMEOUT_SECONDS", "60")),
     )
     file_ready = FileReadyConfig(
         delay_seconds=float(os.getenv("FILE_READY_DELAY", "1")),
@@ -73,6 +91,14 @@ def load_app_config() -> AppConfig:
     shutdown = ShutdownConfig(
         drain_seconds=float(os.getenv("SHUTDOWN_DRAIN_SECONDS", "5")),
     )
+    retry = RetryConfig(
+        interval_seconds=float(os.getenv("RETRY_INTERVAL_SECONDS", "30")),
+        max_interval_seconds=float(os.getenv("RETRY_MAX_INTERVAL_SECONDS", "600")),
+    )
+    state = StateConfig(
+        file_path=os.getenv("STATE_FILE", "/state/send_state.json"),
+        sent_retention_seconds=float(os.getenv("STATE_SENT_RETENTION_SECONDS", "259200")),
+    )
     steam = SteamConfig(
         lang=os.getenv("STEAM_LANG", "en"),
     )
@@ -83,5 +109,7 @@ def load_app_config() -> AppConfig:
         file_ready=file_ready,
         dedup=dedup,
         shutdown=shutdown,
+        retry=retry,
+        state=state,
         steam=steam,
     )

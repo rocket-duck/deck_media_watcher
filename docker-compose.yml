@@ -3,8 +3,11 @@ services:
     image: ghcr.io/rocket-duck/deck_media_watcher:latest
     volumes:
       - /home/<linux_user>/.local/share/Steam/userdata/<steam_id>/760/remote:/screenshots:ro
+      - watcher_state:/state
     environment:
       SCREENSHOT_DIR: /screenshots
+      STATE_FILE: /state/send_state.json
+      STATE_SENT_RETENTION_SECONDS: "259200"
       TELEGRAM_BOT_TOKEN: your_bot_token
       TELEGRAM_CHAT_ID: your_chat_id
       STEAM_LANG: en
@@ -15,6 +18,13 @@ services:
       TELEGRAM_SEND_ATTEMPTS: "3"
       TELEGRAM_SEND_BACKOFF_SECONDS: "1"
       TELEGRAM_CAPTION_LIMIT: "1024"
+      TELEGRAM_CONNECT_TIMEOUT_SECONDS: "10"
+      TELEGRAM_READ_TIMEOUT_SECONDS: "60"
+      RETRY_INTERVAL_SECONDS: "30"
+      RETRY_MAX_INTERVAL_SECONDS: "600"
       SHUTDOWN_DRAIN_SECONDS: "5"
     restart: unless-stopped
     network_mode: host
+
+volumes:
+  watcher_state:
