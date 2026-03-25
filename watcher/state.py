@@ -52,9 +52,8 @@ class SendStateStore:
         self._path = config.file_path
         self._lock = threading.Lock()
         os.makedirs(os.path.dirname(self._path) or ".", exist_ok=True)
-        self._conn = sqlite3.connect(self._path, check_same_thread=False)
+        self._conn = self._open_connection()
         self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
         with self._conn:
             self._conn.execute(self._CREATE_TABLE)
             self._conn.execute(self._CREATE_META)
@@ -66,6 +65,25 @@ class SendStateStore:
         row = self._conn.execute("SELECT value FROM metadata WHERE key='created_at'").fetchone()
         self._db_created_at = float(row["value"])
         self._migrate_from_json()
+
+    def _open_connection(self) -> sqlite3.Connection:
+        """Open SQLite connection, renaming the file if it is not a valid database."""
+        try:
+            conn = sqlite3.connect(self._path, check_same_thread=False)
+            conn.execute("PRAGMA journal_mode=WAL")  # probe validity
+            return conn
+        except sqlite3.DatabaseError:
+            backup = self._path + ".invalid"
+            logging.warning(
+                "State file %s is not a valid SQLite database, moving to %s and starting fresh",
+                self._path,
+                backup,
+            )
+            try:
+                os.replace(self._path, backup)
+            except OSError as e:
+                logging.error("Could not move invalid state file: %s", e)
+            return sqlite3.connect(self._path, check_same_thread=False)
 
     def _migrate_from_json(self) -> None:
         base = os.path.splitext(self._path)[0]

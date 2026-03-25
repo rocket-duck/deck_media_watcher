@@ -13,6 +13,24 @@ def store(tmp_path):
     s.close()
 
 
+class TestOpenConnection:
+    def test_recovers_from_invalid_db_file(self, tmp_path):
+        db_path = tmp_path / "state.db"
+        db_path.write_text("this is not a sqlite database")
+        # Should not raise — renames the bad file and starts fresh
+        s = SendStateStore(StateConfig(file_path=str(db_path)))
+        s.close()
+        assert db_path.exists()
+        assert (tmp_path / "state.db.invalid").exists()
+
+    def test_invalid_db_starts_empty(self, tmp_path):
+        db_path = tmp_path / "state.db"
+        db_path.write_bytes(b"\x00" * 512)
+        s = SendStateStore(StateConfig(file_path=str(db_path)))
+        assert s.mark_discovered("/screenshots/730/shot.png") is True
+        s.close()
+
+
 class TestMarkDiscovered:
     def test_new_path_returns_true(self, store):
         assert store.mark_discovered("/screenshots/730/shot.png") is True
