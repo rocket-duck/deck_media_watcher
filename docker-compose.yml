@@ -9,25 +9,10 @@ services:
       - watcher_state:/state
     environment:
       SCREENSHOT_DIR: /screenshots
-      STATE_FILE: /state/send_state.json
-      STATE_SENT_RETENTION_SECONDS: "259200"
+      STATE_FILE: /state/send_state.db
       TELEGRAM_BOT_TOKEN: your_bot_token
       TELEGRAM_CHAT_ID: your_chat_id
-      STEAM_LANG: en
-      STEAM_CC: us
-      FILE_READY_DELAY: "1"
-      FILE_READY_ATTEMPTS: "5"
-      FILE_READY_MIN_SIZE: "1024"
-      DEDUP_TTL_SECONDS: "120"
-      TELEGRAM_SEND_ATTEMPTS: "3"
-      TELEGRAM_SEND_BACKOFF_SECONDS: "1"
-      TELEGRAM_CAPTION_LIMIT: "1024"
-      TELEGRAM_CONNECT_TIMEOUT_SECONDS: "10"
-      TELEGRAM_READ_TIMEOUT_SECONDS: "60"
-      RETRY_INTERVAL_SECONDS: "30"
-      RETRY_MAX_INTERVAL_SECONDS: "600"
-      # TELEGRAM_PROXY_URL: "socks5://user:pass@host:port"
-      SHUTDOWN_DRAIN_SECONDS: "5"
+      # TELEGRAM_PROXY_URL: "socks5h://user:pass@host:port"
     restart: unless-stopped
     network_mode: host
 

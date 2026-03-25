@@ -1,6 +1,9 @@
 import os
 from typing import Optional
 
+# Steam app IDs below this value are considered invalid/junk folders
+MIN_STEAM_APP_ID = 100
+
 
 def is_thumbnail_path(path: str) -> bool:
     return "thumbnails" in path.lower().split(os.sep)
@@ -16,20 +19,21 @@ def extract_appid_from_path(path: str) -> Optional[str]:
 
     Ignores:
     - folders like 'thumbnails'
-    - folders with numbers < 100 (junk)
+    - folders with numbers < MIN_STEAM_APP_ID (junk)
     """
     parts = path.split(os.sep)
 
     def is_valid_appid(value: str) -> bool:
-        return value.isdigit() and int(value) >= 100
+        return value.isdigit() and int(value) >= MIN_STEAM_APP_ID
 
-    # контейнер: /screenshots/<appid>/screenshots/file.jpg
+    # Container path: /screenshots/<appid>/screenshots/file.jpg
     try:
         if parts[1] == "screenshots" and is_valid_appid(parts[2]) and "thumbnails" not in parts:
             return parts[2]
     except IndexError:
         pass
 
+    # Host path: .../remote/<appid>/screenshots/file.jpg
     try:
         idx = parts.index("remote")
         if is_valid_appid(parts[idx + 1]) and "thumbnails" not in parts:

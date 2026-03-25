@@ -18,6 +18,11 @@ deck-media-watcher = "watcher.app:main"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.15.0"
+pytest = "^8.0"
+pytest-mock = "^3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["poetry-core"]

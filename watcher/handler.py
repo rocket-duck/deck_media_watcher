@@ -9,7 +9,15 @@ from typing import Optional, Tuple
 
 from watchdog.events import FileSystemEventHandler
 
-from watcher.config import AppConfig
+from watcher.config import (
+    DEDUP_TTL_SECONDS,
+    FILE_READY_ATTEMPTS,
+    FILE_READY_DELAY_SECONDS,
+    FILE_READY_MIN_SIZE_BYTES,
+    RETRY_INTERVAL_SECONDS,
+    SHUTDOWN_DRAIN_SECONDS,
+    AppConfig,
+)
 from watcher.paths import extract_appid_from_path, is_screenshot_file, is_thumbnail_path
 from watcher.state import SendStateStore
 from watcher.steam import SteamResolver
@@ -20,7 +28,7 @@ class ScreenshotHandler(FileSystemEventHandler):
     """Handle new screenshot files by sending them to Telegram."""
 
     def __init__(self, config: AppConfig) -> None:
-        self._config = config
+        self._screenshot_dir = config.screenshot_dir
         self._queue: Queue[str] = Queue()
         self._queued_paths: set[str] = set()
         self._queue_lock = threading.Lock()
@@ -28,15 +36,15 @@ class ScreenshotHandler(FileSystemEventHandler):
         self._worker = threading.Thread(target=self._worker_loop, name="telegram-sender", daemon=True)
         self._retry_worker = threading.Thread(target=self._retry_loop, name="telegram-retry", daemon=True)
         self._recent: dict[str, float] = {}
-        self._recent_ttl = config.dedup.ttl_seconds
         self._state = SendStateStore(config.state)
-        self._steam = SteamResolver(config.steam)
+        self._steam = SteamResolver()
         self._telegram = TelegramSender(config.telegram)
         known_paths = self._discover_existing_screenshots()
+        path_mtimes = self._get_mtimes(known_paths)
         self._state.cleanup_missing(known_paths)
-        preregistered = self._state.preregister_as_sent(known_paths)
-        if preregistered:
-            logging.info("Pre-registered %s untracked screenshots as sent (startup dedup)", preregistered)
+        new_count = self._state.preregister_startup(path_mtimes)
+        if new_count:
+            logging.info("Found %s new screenshots created while stopped, queuing for send", new_count)
         due_items = self._state.get_due_pending()
         for item in due_items:
             if item.path in known_paths:
@@ -59,15 +67,15 @@ class ScreenshotHandler(FileSystemEventHandler):
             self._enqueue(path)
 
     def close(self) -> None:
-        drain_timeout = self._config.shutdown.drain_seconds
         self._stop_event.set()
-        deadline = time.time() + drain_timeout
+        deadline = time.time() + SHUTDOWN_DRAIN_SECONDS
         while time.time() < deadline and not self._queue.empty():
             time.sleep(0.1)
         self._worker.join(timeout=5)
         self._retry_worker.join(timeout=5)
         self._telegram.close()
         self._steam.close()
+        self._state.close()
 
     # --- helpers ---------------------------------------------------------
     def _build_caption(self, path: str) -> Optional[str]:
@@ -93,7 +101,6 @@ class ScreenshotHandler(FileSystemEventHandler):
                     self._queued_paths.discard(path)
 
     def _retry_loop(self) -> None:
-        interval = self._config.retry.interval_seconds
         while not self._stop_event.is_set():
             known_paths = self._discover_existing_screenshots()
             self._state.cleanup_missing(known_paths)
@@ -103,17 +110,12 @@ class ScreenshotHandler(FileSystemEventHandler):
                     return
                 if item.path in known_paths:
                     self._enqueue(item.path)
-            self._stop_event.wait(interval)
+            self._stop_event.wait(RETRY_INTERVAL_SECONDS)
 
     def _send_screenshot(self, path: str) -> None:
         if not self._wait_until_stable(path):
             logging.warning("File not stable or missing, skipping: %s", path)
-            next_retry_at = self._state.mark_failed(
-                path,
-                "file not stable or missing",
-                self._config.retry.interval_seconds,
-                self._config.retry.max_interval_seconds,
-            )
+            next_retry_at = self._state.mark_failed(path, "file not stable or missing")
             logging.info("Scheduled retry for %s at %.0f", path, next_retry_at)
             return
         caption = self._build_caption(path)
@@ -128,47 +130,34 @@ class ScreenshotHandler(FileSystemEventHandler):
                 )
             else:
                 logging.error("Failed to send screenshot after retries: %s", path)
-                next_retry_at = self._state.mark_failed(
-                    path,
-                    "telegram send returned false",
-                    self._config.retry.interval_seconds,
-                    self._config.retry.max_interval_seconds,
-                )
+                next_retry_at = self._state.mark_failed(path, "telegram send returned false")
                 logging.info("Scheduled retry for %s at %.0f", path, next_retry_at)
         except Exception as e:
             logging.exception("Failed to send screenshot %s: %s", path, e)
-            next_retry_at = self._state.mark_failed(
-                path,
-                str(e),
-                self._config.retry.interval_seconds,
-                self._config.retry.max_interval_seconds,
-            )
+            next_retry_at = self._state.mark_failed(path, str(e))
             logging.info("Scheduled retry for %s at %.0f", path, next_retry_at)
 
     def _wait_until_stable(self, path: str) -> bool:
-        delay = self._config.file_ready.delay_seconds
-        attempts = self._config.file_ready.attempts
-        min_size = self._config.file_ready.min_size_bytes
         last: Optional[Tuple[int, float]] = None
-        for _ in range(attempts):
+        for _ in range(FILE_READY_ATTEMPTS):
             if not os.path.exists(path):
-                time.sleep(delay)
+                time.sleep(FILE_READY_DELAY_SECONDS)
                 continue
             try:
                 stat = os.stat(path)
             except OSError:
-                time.sleep(delay)
+                time.sleep(FILE_READY_DELAY_SECONDS)
                 continue
             current = (stat.st_size, stat.st_mtime)
-            if last == current and stat.st_size >= min_size:
+            if last == current and stat.st_size >= FILE_READY_MIN_SIZE_BYTES:
                 return True
             last = current
-            time.sleep(delay)
+            time.sleep(FILE_READY_DELAY_SECONDS)
         return False
 
     def _is_duplicate(self, path: str) -> bool:
         now = time.time()
-        cutoff = now - self._recent_ttl
+        cutoff = now - DEDUP_TTL_SECONDS
         if self._recent:
             self._recent = {p: ts for p, ts in self._recent.items() if ts >= cutoff}
         if path in self._recent:
@@ -176,9 +165,18 @@ class ScreenshotHandler(FileSystemEventHandler):
         self._recent[path] = now
         return False
 
+    def _get_mtimes(self, paths: set[str]) -> dict[str, float]:
+        mtimes: dict[str, float] = {}
+        for path in paths:
+            try:
+                mtimes[path] = os.path.getmtime(path)
+            except OSError:
+                mtimes[path] = 0.0
+        return mtimes
+
     def _discover_existing_screenshots(self) -> set[str]:
         found: set[str] = set()
-        for root, dirs, files in os.walk(self._config.screenshot_dir):
+        for root, dirs, files in os.walk(self._screenshot_dir):
             dirs[:] = [d for d in dirs if d.lower() != "thumbnails"]
             for name in files:
                 path = os.path.join(root, name)

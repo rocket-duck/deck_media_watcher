@@ -1,20 +1,34 @@
+import json
+import logging
+import os
 import sys
 import time
-import logging
+
 from watchdog.observers import Observer
+
 from watcher.config import load_app_config
 from watcher.handler import ScreenshotHandler
+
+
+class _JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        obj: dict = {
+            "time": self.formatTime(record),
+            "level": record.levelname,
+            "msg": record.getMessage(),
+        }
+        if record.exc_info:
+            obj["exc"] = self.formatException(record.exc_info)
+        return json.dumps(obj, ensure_ascii=False)
 
 
 def main() -> None:
     """Entry point for the media watcher service."""
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    handler.setFormatter(formatter)
+    handler.setFormatter(_JsonFormatter())
     logger.handlers = [handler]
 
     try:
@@ -22,6 +36,10 @@ def main() -> None:
     except RuntimeError as exc:
         logger.error("%s; exiting", exc)
         raise
+
+    if not os.path.isdir(config.screenshot_dir):
+        logger.error("SCREENSHOT_DIR does not exist or is not a directory: %s; exiting", config.screenshot_dir)
+        sys.exit(1)
 
     screenshot_handler = ScreenshotHandler(config)
 
