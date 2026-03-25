@@ -6,15 +6,12 @@ services:
     image: ghcr.io/rocket-duck/deck_media_watcher:latest
     volumes:
       - /home/<linux_user>/.local/share/Steam/userdata/<steam_id>/760/remote:/screenshots:ro
-      - watcher_state:/state
+      - ./state:/state
     environment:
       SCREENSHOT_DIR: /screenshots
       STATE_FILE: /state/send_state.db
       TELEGRAM_BOT_TOKEN: your_bot_token
       TELEGRAM_CHAT_ID: your_chat_id
-      # TELEGRAM_PROXY_URL: "socks5h://user:pass@host:port"
+      TELEGRAM_PROXY_URL: "socks5h://user:pass@host:port"
     restart: unless-stopped
     network_mode: host
-
-volumes:
-  watcher_state:
