@@ -1,3 +1,5 @@
+name: deck-media-watcher
+
 services:
   watcher:
     image: ghcr.io/rocket-duck/deck_media_watcher:latest
