@@ -2,6 +2,7 @@ name: deck-media-watcher
 
 services:
   watcher:
+    container_name: deck-media-watcher
     image: ghcr.io/rocket-duck/deck_media_watcher:latest
     volumes:
       - /home/<linux_user>/.local/share/Steam/userdata/<steam_id>/760/remote:/screenshots:ro
