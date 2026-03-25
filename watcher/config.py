@@ -13,6 +13,7 @@ class TelegramConfig:
     caption_limit: int
     connect_timeout_seconds: float
     read_timeout_seconds: float
+    proxy_url: str | None
 
 
 @dataclass(frozen=True)
@@ -80,6 +81,7 @@ def load_app_config() -> AppConfig:
         caption_limit=int(os.getenv("TELEGRAM_CAPTION_LIMIT", "1024")),
         connect_timeout_seconds=float(os.getenv("TELEGRAM_CONNECT_TIMEOUT_SECONDS", "10")),
         read_timeout_seconds=float(os.getenv("TELEGRAM_READ_TIMEOUT_SECONDS", "60")),
+        proxy_url=os.getenv("TELEGRAM_PROXY_URL") or None,
     )
     file_ready = FileReadyConfig(
         delay_seconds=float(os.getenv("FILE_READY_DELAY", "1")),

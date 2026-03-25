@@ -116,6 +116,27 @@ class SendStateStore:
                     )
             return due
 
+    def preregister_as_sent(self, paths: set[str]) -> int:
+        """Mark all untracked paths as sent. Used on startup to avoid re-sending pre-existing files."""
+        now = time.time()
+        registered = 0
+        with self._lock:
+            for path in paths:
+                if path not in self._state:
+                    self._state[path] = {
+                        "status": "sent",
+                        "first_seen_at": now,
+                        "last_attempt_at": now,
+                        "next_retry_at": None,
+                        "attempts": 0,
+                        "last_error": None,
+                        "sent_at": now,
+                    }
+                    registered += 1
+            if registered:
+                self._save_locked()
+        return registered
+
     def cleanup_missing(self, known_paths: set[str]) -> int:
         with self._lock:
             removable = [path for path, item in self._state.items() if item.get("status") != "sent" and path not in known_paths]

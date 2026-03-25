@@ -21,6 +21,9 @@ class TelegramSender:
         self._connect_timeout = config.connect_timeout_seconds
         self._read_timeout = config.read_timeout_seconds
         self._session = requests.Session()
+        if config.proxy_url:
+            self._session.proxies = {"http": config.proxy_url, "https": config.proxy_url}
+            logging.info("Telegram sender using proxy: %s", config.proxy_url)
         self._url = f"https://api.telegram.org/bot{self._bot_token}/sendPhoto"
 
     def send_photo(self, path: str, caption: Optional[str]) -> bool:

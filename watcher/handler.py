@@ -34,9 +34,13 @@ class ScreenshotHandler(FileSystemEventHandler):
         self._telegram = TelegramSender(config.telegram)
         known_paths = self._discover_existing_screenshots()
         self._state.cleanup_missing(known_paths)
-        for path in known_paths:
-            if self._state.mark_discovered(path):
-                self._enqueue(path)
+        preregistered = self._state.preregister_as_sent(known_paths)
+        if preregistered:
+            logging.info("Pre-registered %s untracked screenshots as sent (startup dedup)", preregistered)
+        due_items = self._state.get_due_pending()
+        for item in due_items:
+            if item.path in known_paths:
+                self._enqueue(item.path)
         logging.info("Loaded %s existing screenshots for state tracking", len(known_paths))
         self._worker.start()
         self._retry_worker.start()

@@ -23,6 +23,7 @@ services:
       TELEGRAM_READ_TIMEOUT_SECONDS: "60"
       RETRY_INTERVAL_SECONDS: "30"
       RETRY_MAX_INTERVAL_SECONDS: "600"
+      # TELEGRAM_PROXY_URL: "socks5://user:pass@host:port"
       SHUTDOWN_DRAIN_SECONDS: "5"
     restart: unless-stopped
     network_mode: host
