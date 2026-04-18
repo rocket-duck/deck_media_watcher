@@ -12,7 +12,6 @@ from typing import List, Optional
 from watcher.config import (
     RETRY_INTERVAL_SECONDS,
     RETRY_MAX_INTERVAL_SECONDS,
-    STATE_SENT_RETENTION_SECONDS,
     StateConfig,
 )
 
@@ -64,6 +63,11 @@ class SendStateStore:
             )
         row = self._conn.execute("SELECT value FROM metadata WHERE key='created_at'").fetchone()
         self._db_created_at = float(row["value"])
+
+        hb_row = self._conn.execute("SELECT value FROM metadata WHERE key='last_shutdown_at'").fetchone()
+        self._startup_cutoff: float = float(hb_row["value"]) if hb_row else self._db_created_at
+        self.update_heartbeat()
+
         self._migrate_from_json()
 
     def _open_connection(self) -> sqlite3.Connection:
@@ -157,7 +161,6 @@ class SendStateStore:
                            next_retry_at=NULL, last_error=NULL, sent_at=excluded.sent_at""",
                     (path, now, now, now),
                 )
-                self._prune(now)
 
     def mark_failed(self, path: str, error: str) -> float:
         """Mark a screenshot as failed and schedule exponential-backoff retry.
@@ -200,7 +203,7 @@ class SendStateStore:
     def cleanup_missing(self, known_paths: set[str]) -> int:
         with self._lock:
             rows = self._conn.execute(
-                "SELECT path FROM screenshots WHERE status != 'sent'"
+                "SELECT path FROM screenshots"
             ).fetchall()
             removable = [r["path"] for r in rows if r["path"] not in known_paths]
             if not removable:
@@ -230,7 +233,7 @@ class SendStateStore:
             for path, mtime in path_mtimes.items():
                 if path in existing:
                     continue
-                if mtime < self._db_created_at:
+                if mtime < self._startup_cutoff:
                     sent_rows.append((path, "sent", mtime, now, None, 0, None, now))
                 else:
                     pending_rows.append((path, "pending", mtime, None, now, 0, None, None))
@@ -242,11 +245,15 @@ class SendStateStore:
                     self._conn.executemany(insert_sql, pending_rows)
             return len(pending_rows)
 
+    def update_heartbeat(self) -> None:
+        with self._lock:
+            with self._conn:
+                self._conn.execute(
+                    "INSERT OR REPLACE INTO metadata (key, value) VALUES ('last_shutdown_at', ?)",
+                    (str(time.time()),),
+                )
+
     def close(self) -> None:
+        self.update_heartbeat()
         self._conn.close()
 
-    def _prune(self, now: float) -> None:
-        cutoff = now - STATE_SENT_RETENTION_SECONDS
-        self._conn.execute(
-            "DELETE FROM screenshots WHERE status='sent' AND sent_at < ?", (cutoff,)
-        )

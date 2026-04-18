@@ -110,6 +110,7 @@ class ScreenshotHandler(FileSystemEventHandler):
                     return
                 if item.path in known_paths:
                     self._enqueue(item.path)
+            self._state.update_heartbeat()
             self._stop_event.wait(RETRY_INTERVAL_SECONDS)
 
     def _send_screenshot(self, path: str) -> None:

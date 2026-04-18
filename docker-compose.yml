@@ -9,7 +9,7 @@ services:
       - ./state:/state
     environment:
       SCREENSHOT_DIR: /screenshots
-      STATE_FILE: /state/send_state.db
+      STATE_FILE: /state/send_state.json
       TELEGRAM_BOT_TOKEN: your_bot_token
       TELEGRAM_CHAT_ID: your_chat_id
       TELEGRAM_PROXY_URL: "socks5h://user:pass@host:port"

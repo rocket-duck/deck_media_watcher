@@ -22,9 +22,6 @@ SHUTDOWN_DRAIN_SECONDS: float = 5.0
 RETRY_INTERVAL_SECONDS: float = 30.0
 RETRY_MAX_INTERVAL_SECONDS: float = 600.0
 
-# How long to keep "sent" records in the state DB (3 days)
-STATE_SENT_RETENTION_SECONDS: float = 259_200.0
-
 # Steam Store API
 STEAM_LANG: str = "en"
 STEAM_CC: str = "us"
